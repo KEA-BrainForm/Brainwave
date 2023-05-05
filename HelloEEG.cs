@@ -1,4 +1,5 @@
 ﻿using System;
+
 using System.Text;
 using System.Threading;
 using System.IO;
@@ -11,12 +12,11 @@ using System.Collections;
 using HelloEEG;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
-using System.Web.Security;
-
+using System.Linq;
 
 namespace testprogram
 {
-    class Program    
+    class Program
     {
         static ArrayList attention = new ArrayList();
         static ArrayList meditation = new ArrayList();
@@ -24,111 +24,143 @@ namespace testprogram
         static Connector connector;
         static byte poorSig;
 
-        
+
 
         public static async Task Main(string[] args)
         {
-            string password = Membership.GeneratePassword(6, 1);
+            Random random = new Random();
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            string password = new string(Enumerable.Repeat(chars, 6)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+
             Console.WriteLine(password);
+
             while (true)
             {
-                var getUri = "http://localhost:8080/userInfo";
-                getUri = getUri + "/" + password;
+
+                var getUri = "http://localhost:8080/userInfo/";
+                getUri = getUri + password;
+
+
                 using (var client = new HttpClient())
-                { 
-                    var response = await client.GetAsync(getUri);
-                    var content = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(content);
-
-                    // Deserialize the JSON string into a dynamic object
-                    dynamic obj1 = JsonConvert.DeserializeObject(content);
-
-
-                    // Access the individual properties of the object and print them
-                    Console.WriteLine("Flag: " + obj1.flag);
-                    while(obj1.flag == true)
+                {
+                    try
                     {
-                        connector = new Connector();
-                        connector.DeviceConnected += new EventHandler(OnDeviceConnected);
-                        connector.DeviceConnectFail += new EventHandler(OnDeviceFail);
-                        connector.DeviceValidating += new EventHandler(OnDeviceValidating);
+                        Console.WriteLine(getUri);
+                        var response = await client.GetAsync(getUri);
+                        var content = await response.Content.ReadAsStringAsync();
 
-                        // Scan for devices across COM ports
-                        // The COM port named will be the first COM port that is checked.
-                        connector.ConnectScan("COM6");
+                        // Deserialize the JSON string into a dynamic object
+                        dynamic obj1 = JsonConvert.DeserializeObject(content);
 
+                        Console.WriteLine(obj1);
+                        // Access the individual properties of the object and print them
+                        Console.WriteLine("Flag: " + obj1.flag);
 
-                        // Blink detection needs to be manually turned on
-                        connector.setBlinkDetectionEnabled(true);
-                        while (true)
+                        while (obj1.flag == true)
                         {
-                            response = await client.GetAsync(getUri);
-                            content = await response.Content.ReadAsStringAsync();
-                            obj1 = JsonConvert.DeserializeObject(content);
-                            if (obj1.flag == false) {
-                                Form1 form1 = new Form1();
+                            connector = new Connector();
+                            connector.DeviceConnected += new EventHandler(OnDeviceConnected);
+                            connector.DeviceConnectFail += new EventHandler(OnDeviceFail);
+                            connector.DeviceValidating += new EventHandler(OnDeviceValidating);
 
-                                Series seriesA = new Series("Attention");
-                                Series seriesM = new Series("Meditation");
+                            // Scan for devices across COM ports
+                            // The COM port named will be the first COM port that is checked.
+                            connector.ConnectScan("COM6");
 
 
-                                // Chart를 Line Chart로 설정합니다.
-                                seriesA.ChartType = SeriesChartType.Line;
-
-                                foreach (object obj in attention)
+                            // Blink detection needs to be manually turned on
+                            connector.setBlinkDetectionEnabled(true);
+                            while (true)
+                            {
+                                response = await client.GetAsync(getUri);
+                                content = await response.Content.ReadAsStringAsync();
+                                obj1 = JsonConvert.DeserializeObject(content);
+                                if (obj1.flag == false)
                                 {
-                                    seriesA.Points.Add((double)obj);
+                                    Form1 form1 = new Form1();
+
+                                    Series seriesA = new Series("Attention");
+                                    Series seriesM = new Series("Meditation");
+
+
+                                    // Chart를 Line Chart로 설정합니다.
+                                    seriesA.ChartType = SeriesChartType.Line;
+
+                                    for (int i = 0; i < 4; i++)
+                                    {
+                                        if (attention.Count > 0)
+                                        {
+                                            var val = attention[0];
+                                            attention.RemoveAt(0);
+                                        }
+                                        if (meditation.Count > 0)
+                                        {
+                                            var val = meditation[0];
+                                            meditation.RemoveAt(0);
+                                        }
+                                    }
+
+                                    foreach (object obj in attention)
+                                    {
+                                        seriesA.Points.Add((double)obj);
+                                    }
+
+                                    foreach (object obj in meditation)
+                                    {
+                                        seriesM.Points.Add((double)obj);
+                                    }
+
+                                    form1.chart1.Series.Add(seriesA);
+                                    form1.chart1.Series.Add(seriesM);
+
+                                    // Chart를 Line Chart로 설정합니다.
+                                    seriesA.ChartType = SeriesChartType.Line;
+                                    seriesM.ChartType = SeriesChartType.Line;
+
+                                    form1.chart1.SaveImage("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png", ChartImageFormat.Png);
+
+                                    System.Console.WriteLine("Goodbye.");
+                                    connector.Close();
+
+                                    // POST
+                                    var postUri = new Uri("http://localhost:8080/imgInfo");
+
+                                    var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code };
+
+                                    var imageContent = new ByteArrayContent(File.ReadAllBytes("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png"));
+                                    imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
+
+                                    var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+                                    var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                                    Console.WriteLine(jsonData);
+
+                                    var mergedContent = new MultipartFormDataContent();
+                                    mergedContent.Add(jsonContent, "braindata");
+                                    mergedContent.Add(imageContent, "image", "image.png");
+                                    Console.WriteLine(mergedContent);
+                                    Console.WriteLine(mergedContent.Headers);
+                                    var response2 = await client.PostAsync(postUri, mergedContent);
+                                    var result = await response2.Content.ReadAsStringAsync();
                                 }
-
-                                foreach (object obj in meditation)
-                                {
-                                    seriesM.Points.Add((double)obj);
-                                }
-
-                                form1.chart1.Series.Add(seriesA);
-                                form1.chart1.Series.Add(seriesM);
-
-                                // Chart를 Line Chart로 설정합니다.
-                                seriesA.ChartType = SeriesChartType.Line;
-                                seriesM.ChartType = SeriesChartType.Line;
-
-                                form1.chart1.SaveImage("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png", ChartImageFormat.Png);
-
-                                System.Console.WriteLine("Goodbye.");
-                                connector.Close();
-
-                                // POST
-                                var postUri = new Uri("http://localhost:8080/imgInfo");
-                               
-                                var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code };
-
-                                var imageContent = new ByteArrayContent(File.ReadAllBytes("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png"));
-                                imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
-
-                                var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(data);
-                                var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
-                                Console.WriteLine(jsonData);
-
-                                var mergedContent = new MultipartFormDataContent();
-                                mergedContent.Add(jsonContent, "braindata");
-                                mergedContent.Add(imageContent, "chart", "image.png");
-                                Console.WriteLine(mergedContent);
-                                Console.WriteLine(mergedContent.Headers);
-                                var response2 = await client.PostAsync(postUri, mergedContent);
-                                var result = await response2.Content.ReadAsStringAsync();
+                                Thread.Sleep(2000);
                             }
-                            Thread.Sleep(2000);
+
+
                         }
 
-                           
-                    }
 
-                    
+                    }
+                    catch { Thread.Sleep(5000); continue; }
+
 
                 }
-                Thread.Sleep(5000);
-            }              
-   
+
+
+
+
+            }
+
         }
 
 
