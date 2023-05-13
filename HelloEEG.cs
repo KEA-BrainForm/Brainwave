@@ -15,8 +15,11 @@ using System.Net.Http.Headers;
 using System.Linq;
 using System.Windows.Forms;
 
+
+
 namespace testprogram
 {
+    
     class Program
     {
         static ArrayList attention = new ArrayList();
@@ -26,15 +29,18 @@ namespace testprogram
         static byte poorSig;
         public static async Task Main(string[] args)
         {
+            //랜덤 연결코드 생성
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             string password = new string(Enumerable.Repeat(chars, 6)
               .Select(s => s[random.Next(s.Length)]).ToArray());
             
+            //GUI 호출
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             var gui = new GUI(password);
 
+            //GUI 실행
             Thread t = new Thread(() => {
                 Application.Run(gui);
             });
@@ -46,9 +52,9 @@ namespace testprogram
             
             while (true)
             {
-
+                //get uri 생성
                 var getUri = "http://localhost:8080/userInfo/";
-                getUri = getUri + password;
+                getUri += password;
 
 
                 using (var client = new HttpClient())
@@ -183,12 +189,10 @@ namespace testprogram
 
         static void OnDeviceConnected(object sender, EventArgs e)
         {
-
             Connector.DeviceEventArgs de = (Connector.DeviceEventArgs)e;
 
             Console.WriteLine("Device found on: " + de.Device.PortName);
             de.Device.DataReceived += new EventHandler(OnDataReceived);
-
         }
 
 
@@ -198,9 +202,7 @@ namespace testprogram
 
         static void OnDeviceFail(object sender, EventArgs e)
         {
-
             Console.WriteLine("No devices found! :(");
-
         }
 
 

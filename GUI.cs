@@ -37,7 +37,8 @@ namespace HelloEEG
             Clipboard.SetText(password);
 
             // 복사가 완료되었다는 메시지를 출력합니다.
-            MessageBox.Show("Password copied to clipboard!");
+            MessageBox.Show("연결 코드가 클립보드에 복사되었습니다.\n뇌파 측정 기기와의 연결을 위해 웹페이지에 코드를 입력해주세요!");
+            UpdateTextBox(">> Connection code copied to clipboard");
         }
 
         private void logBox_TextChanged(object sender, EventArgs e)
