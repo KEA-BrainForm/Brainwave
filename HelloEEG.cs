@@ -13,6 +13,7 @@ using HelloEEG;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace testprogram
 {
@@ -23,18 +24,26 @@ namespace testprogram
 
         static Connector connector;
         static byte poorSig;
-
-
-
         public static async Task Main(string[] args)
         {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             string password = new string(Enumerable.Repeat(chars, 6)
               .Select(s => s[random.Next(s.Length)]).ToArray());
+            
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            var gui = new GUI(password);
 
-            Console.WriteLine(password);
+            Thread t = new Thread(() => {
+                Application.Run(gui);
+            });
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
 
+            gui.UpdateTextBox(">> Connection code: " + password);
+            //Console.WriteLine(password);
+            
             while (true)
             {
 
@@ -46,16 +55,19 @@ namespace testprogram
                 {
                     try
                     {
-                        Console.WriteLine(getUri);
+                        gui.UpdateTextBox(">> getUri: " + getUri);
+                        //Console.WriteLine(getUri);
                         var response = await client.GetAsync(getUri);
                         var content = await response.Content.ReadAsStringAsync();
 
                         // Deserialize the JSON string into a dynamic object
                         dynamic obj1 = JsonConvert.DeserializeObject(content);
 
+                        gui.UpdateTextBox(obj1);
                         Console.WriteLine(obj1);
                         // Access the individual properties of the object and print them
-                        Console.WriteLine("Flag: " + obj1.flag);
+                        gui.UpdateTextBox(">> Surveying: " + obj1.flag);
+                        //Console.WriteLine("Flag: " + obj1.flag);
 
                         while (obj1.flag == true)
                         {
@@ -78,7 +90,7 @@ namespace testprogram
                                 obj1 = JsonConvert.DeserializeObject(content);
                                 if (obj1.flag == false)
                                 {
-                                    Form1 form1 = new Form1();
+                                    drawChart form1 = new drawChart();
 
                                     Series seriesA = new Series("Attention");
                                     Series seriesM = new Series("Meditation");
@@ -120,7 +132,8 @@ namespace testprogram
 
                                     form1.chart1.SaveImage("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png", ChartImageFormat.Png);
 
-                                    System.Console.WriteLine("Goodbye.");
+                                    gui.UpdateTextBox(">> Connection closed.");
+                                    //System.Console.WriteLine("Goodbye.");
                                     connector.Close();
 
                                     // POST
@@ -133,13 +146,15 @@ namespace testprogram
 
                                     var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(data);
                                     var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                                    gui.UpdateTextBox(jsonData);
                                     Console.WriteLine(jsonData);
 
                                     var mergedContent = new MultipartFormDataContent();
                                     mergedContent.Add(jsonContent, "braindata");
                                     mergedContent.Add(imageContent, "image", "image.png");
-                                    Console.WriteLine(mergedContent);
-                                    Console.WriteLine(mergedContent.Headers);
+                                    
+                                    //Console.WriteLine(mergedContent);
+                                    //Console.WriteLine(mergedContent.Headers);
                                     var response2 = await client.PostAsync(postUri, mergedContent);
                                     var result = await response2.Content.ReadAsStringAsync();
                                 }
@@ -160,7 +175,7 @@ namespace testprogram
 
 
             }
-
+            
         }
 
 

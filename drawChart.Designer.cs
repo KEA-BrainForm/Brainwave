@@ -1,6 +1,6 @@
 ﻿namespace HelloEEG
 {
-    partial class Form1
+    partial class drawChart
     {
         /// <summary>
         /// Required designer variable.

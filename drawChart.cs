@@ -11,9 +11,9 @@ using System.Windows.Forms.DataVisualization.Charting;
 
 namespace HelloEEG
 {
-    public partial class Form1 : Form
+    public partial class drawChart : Form
     {
-        public Form1()
+        public drawChart()
         {
             InitializeComponent();
             chart1.Series.Clear();

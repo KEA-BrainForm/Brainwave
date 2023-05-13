@@ -47,3 +47,22 @@ C:\Users\USER\Desktop\NeuroSky MindWave Mobile_Example_HelloEEG\obj\x86\Debug\He
 C:\Users\USER\Desktop\NeuroSky MindWave Mobile_Example_HelloEEG\bin\Debug\System.Threading.Tasks.Extensions.dll
 C:\Users\USER\Desktop\NeuroSky MindWave Mobile_Example_HelloEEG\bin\Debug\Newtonsoft.Json.dll
 C:\Users\USER\Desktop\NeuroSky MindWave Mobile_Example_HelloEEG\bin\Debug\Newtonsoft.Json.xml
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\ConsoleApplication.exe.config
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\ConsoleApplication.exe
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\ConsoleApplication.pdb
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\Newtonsoft.Json.dll
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\System.Threading.Tasks.Extensions.dll
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\ThinkGear.dll
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\Jayrock.Json.dll
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\NLog.dll
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\Newtonsoft.Json.xml
+C:\Users\USER\Desktop\project\Brainwave\bin\Debug\NLog.xml
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.csproj.AssemblyReference.cache
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.csproj.SuggestedBindingRedirects.cache
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.csproj.GenerateResource.cache
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.csproj.CoreCompileInputs.cache
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.csproj.CopyComplete
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\ConsoleApplication.exe
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\ConsoleApplication.pdb
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.drawChart.resources
+C:\Users\USER\Desktop\project\Brainwave\obj\x86\Debug\HelloEEG.gui.resources
