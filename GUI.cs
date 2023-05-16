@@ -38,6 +38,7 @@ namespace HelloEEG
 
         public async Task Brain()
         {
+            UpdateTextBox(">> Connecting code: " + password);
             //get uri 생성
             var getUri = "http://localhost:8080/api/userInfo/";
             getUri += password;
@@ -50,8 +51,9 @@ namespace HelloEEG
                 {
                     try
                     {
+                        UpdateTextBox(">> Getting uri response...");
                         var response = await client.GetAsync(getUri);
-                        UpdateTextBox(">> Got uri response");
+                        UpdateTextBox(">> Got uri response!");
                         var content = await response.Content.ReadAsStringAsync();
                         UpdateTextBox(">> Got content from uri");
                         // Deserialize the JSON string into a dynamic object
@@ -294,10 +296,11 @@ namespace HelloEEG
 
         private void button1_Click(object sender, EventArgs e)
         {
-            // password 변수에 저장된 값을 클립보드에 복사합니다.
-            Clipboard.SetText(password);
 
-            // 복사가 완료되었다는 메시지를 출력합니다.
+
+            // 클립보드에 접근하여 비동기로 복사 작업 실행
+            Clipboard.SetText(password);
+            // 복사 작업이 완료되면 메시지를 보여줌
             MessageBox.Show("연결 코드가 클립보드에 복사되었습니다.\n뇌파 측정 기기와의 연결을 위해 웹페이지에 코드를 입력해주세요!");
             UpdateTextBox(">> Connection code copied to clipboard");
         }

@@ -27,6 +27,7 @@ namespace testprogram
 
         static Connector connector;
         static byte poorSig;
+        [STAThread]
         public static async Task Main(string[] args)
         {
             //랜덤 연결코드 생성
@@ -39,10 +40,13 @@ namespace testprogram
             //GUI 호출
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            GUI gui = new GUI(password);
+            Thread thread = new Thread(() =>
+            {
+                Application.Run(new GUI(password));
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
 
-            //GUI 실행
-            Application.Run(gui);
         }
     }
 
