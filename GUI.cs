@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Collections;
+using System.Web;
 
 namespace HelloEEG
 {
@@ -26,6 +27,7 @@ namespace HelloEEG
         static Connector connector;
         static byte poorSig;
         private string password;
+
         public GUI(string password)
         {
             InitializeComponent();
@@ -33,25 +35,25 @@ namespace HelloEEG
             pw.Text = password;
             Brain();
         }
+
         public async Task Brain()
         {
+            //get uri 생성
+            var getUri = "http://localhost:8080/api/userInfo/";
+            getUri += password;
+            UpdateTextBox(">> getUri: " + getUri);
+            //Console.WriteLine(getUri);
 
             while (true)
             {
-                //get uri 생성
-                var getUri = "http://localhost:8080/api/userInfo/";
-                getUri += password;
-
-
                 using (var client = new HttpClient())
                 {
                     try
                     {
-                        //gui.UpdateTextBox(">> getUri: " + getUri);
-                        Console.WriteLine(getUri);
                         var response = await client.GetAsync(getUri);
+                        UpdateTextBox(">> Got uri response");
                         var content = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine("2");
+                        UpdateTextBox(">> Got content from uri");
                         // Deserialize the JSON string into a dynamic object
                         dynamic obj1 = JsonConvert.DeserializeObject(content);
 
@@ -158,21 +160,24 @@ namespace HelloEEG
 
 
                     }
-                    catch { Thread.Sleep(5000); continue; }
-
-
+                    catch 
+                    {
+                        UpdateTextBox(">> No response from uri: Retry...");
+                        Thread.Sleep(3000); 
+                        continue; 
+                    }
                 }
-
-
             }
         }
-        // Called when a device is connected 
 
+        // Called when a device is connected 
         static void OnDeviceConnected(object sender, EventArgs e)
         {
             Connector.DeviceEventArgs de = (Connector.DeviceEventArgs)e;
 
-            Console.WriteLine("Device found on: " + de.Device.PortName);
+            //Console.WriteLine("Device found on: " + de.Device.PortName);
+            UpdateTextBox2(">> Device found on: " + de.Device.PortName);
+
             de.Device.DataReceived += new EventHandler(OnDataReceived);
         }
 
@@ -183,7 +188,8 @@ namespace HelloEEG
 
         static void OnDeviceFail(object sender, EventArgs e)
         {
-            Console.WriteLine("No devices found! :(");
+            //Console.WriteLine("No devices found! :(");
+            UpdateTextBox2(">> No devices found! :(");
         }
 
 
@@ -192,8 +198,8 @@ namespace HelloEEG
 
         static void OnDeviceValidating(object sender, EventArgs e)
         {
-
-            Console.WriteLine("Validating: ");
+            //Console.WriteLine("Validating: ");
+            UpdateTextBox2(">> Validating...");
 
         }
 
@@ -232,7 +238,12 @@ namespace HelloEEG
                     //Console.WriteLine("Time:" + tgParser.ParsedData[i]["Time"]);
 
                     //A Poor Signal value of 0 indicates that your headset is fitting properly
-                    Console.WriteLine("Poor Signal:" + tgParser.ParsedData[i]["PoorSignal"]);
+                    //Console.WriteLine("Poor Signal:" + tgParser.ParsedData[i]["PoorSignal"]);
+
+                    if (tgParser.ParsedData[i]["PoorSignal"] > 50)
+                    {
+                        UpdateTextBox2("Poor SIGNAL!");
+                    }
 
                     poorSig = (byte)tgParser.ParsedData[i]["PoorSignal"];
                 }
@@ -240,34 +251,31 @@ namespace HelloEEG
 
                 if (tgParser.ParsedData[i].ContainsKey("Attention"))
                 {
+                    //Console.WriteLine("Att Value:" + tgParser.ParsedData[i]["Attention"]);
+                    UpdateTextBox2("Att Value:" + tgParser.ParsedData[i]["Attention"]);
 
-                    Console.WriteLine("Att Value:" + tgParser.ParsedData[i]["Attention"]);
                     attention.Add(tgParser.ParsedData[i]["Attention"]);
-
                 }
 
 
                 if (tgParser.ParsedData[i].ContainsKey("Meditation"))
                 {
+                    //Console.WriteLine("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
+                    UpdateTextBox2("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
 
-                    Console.WriteLine("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
                     meditation.Add(tgParser.ParsedData[i]["Meditation"]);
-
                 }
 
 
                 if (tgParser.ParsedData[i].ContainsKey("EegPowerDelta"))
                 {
-
                     //Console.WriteLine("Delta: " + tgParser.ParsedData[i]["EegPowerDelta"]);
 
                 }
 
                 if (tgParser.ParsedData[i].ContainsKey("BlinkStrength"))
                 {
-
                     //Console.WriteLine("Eyeblink " + tgParser.ParsedData[i]["BlinkStrength"]);
-
                 }
 
 
@@ -304,5 +312,9 @@ namespace HelloEEG
             logBox.Text += text + Environment.NewLine;
         }
 
+        public static void UpdateTextBox2(string text)
+        {
+            UpdateTextBox2(text);
+        }
     }
 }

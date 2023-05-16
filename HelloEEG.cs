@@ -41,19 +41,9 @@ namespace testprogram
             Application.SetCompatibleTextRenderingDefault(false);
             GUI gui = new GUI(password);
 
-           
-           
+            //GUI 실행
             Application.Run(gui);
-           
-   
-            
-
-
-            
-            
         }
-
-
     }
 
 }

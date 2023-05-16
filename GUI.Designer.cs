@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Web.UI.WebControls;
 
 namespace HelloEEG
 {
@@ -28,6 +29,7 @@ namespace HelloEEG
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
+
         private void InitializeComponent()
         {
             this.label1 = new System.Windows.Forms.Label();
