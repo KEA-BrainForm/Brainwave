@@ -53,7 +53,7 @@ namespace testprogram
             while (true)
             {
                 //get uri 생성
-                var getUri = "http://localhost:8080/userInfo/";
+                var getUri = "http://localhost:8080/api/userInfo/";
                 getUri += password;
 
 
@@ -143,7 +143,7 @@ namespace testprogram
                                     connector.Close();
 
                                     // POST
-                                    var postUri = new Uri("http://localhost:8080/imgInfo");
+                                    var postUri = new Uri("http://localhost:8080/api/imgInfo");
 
                                     var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code };
 
