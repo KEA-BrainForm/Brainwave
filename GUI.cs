@@ -33,36 +33,36 @@ namespace HelloEEG
             InitializeComponent();
             this.password = password;
             pw.Text = password;
-            Brain();
+            _ = Brain();
         }
+
 
         public async Task Brain()
         {
-            UpdateTextBox(">> Connecting code: " + password);
+            UpdateTextBox("Connecting code: " + password);
             //get uri 생성
             var getUri = "http://localhost:8080/api/userInfo/";
             getUri += password;
-            UpdateTextBox(">> getUri: " + getUri);
-            //Console.WriteLine(getUri);
+            UpdateTextBox("getUri: " + getUri);
 
             while (true)
             {
-                using (var client = new HttpClient())
+                using (HttpClient client = new HttpClient())
                 {
                     try
                     {
-                        UpdateTextBox(">> Getting uri response...");
                         var response = await client.GetAsync(getUri);
-                        UpdateTextBox(">> Got uri response!");
+                        await Task.Delay(3000);
+                        UpdateTextBox("Got uri response!");
                         var content = await response.Content.ReadAsStringAsync();
-                        UpdateTextBox(">> Got content from uri");
                         // Deserialize the JSON string into a dynamic object
                         dynamic obj1 = JsonConvert.DeserializeObject(content);
 
-                        //gui.UpdateTextBox(obj1);
+                        if (obj1 == null) UpdateTextBox("Failed to get content. Please input the connection code.");
+
                         Console.WriteLine(obj1);
                         // Access the individual properties of the object and print them
-                        //gui.UpdateTextBox(">> Surveying: " + obj1.flag);
+                        UpdateTextBox("Surveying: " + obj1.flag);
                         Console.WriteLine("Flag: " + obj1.flag);
 
                         while (obj1.flag == true)
@@ -162,10 +162,9 @@ namespace HelloEEG
 
 
                     }
-                    catch 
+                    catch
                     {
-                        UpdateTextBox(">> No response from uri: Retry...");
-                        Thread.Sleep(3000); 
+                        UpdateTextBox("Retrying...");
                         continue; 
                     }
                 }
@@ -178,7 +177,7 @@ namespace HelloEEG
             Connector.DeviceEventArgs de = (Connector.DeviceEventArgs)e;
 
             //Console.WriteLine("Device found on: " + de.Device.PortName);
-            UpdateTextBox2(">> Device found on: " + de.Device.PortName);
+            UpdateTextBox2("Device found on: " + de.Device.PortName);
 
             de.Device.DataReceived += new EventHandler(OnDataReceived);
         }
@@ -191,7 +190,7 @@ namespace HelloEEG
         static void OnDeviceFail(object sender, EventArgs e)
         {
             //Console.WriteLine("No devices found! :(");
-            UpdateTextBox2(">> No devices found! :(");
+            UpdateTextBox2("No devices found! :(");
         }
 
 
@@ -201,7 +200,7 @@ namespace HelloEEG
         static void OnDeviceValidating(object sender, EventArgs e)
         {
             //Console.WriteLine("Validating: ");
-            UpdateTextBox2(">> Validating...");
+            UpdateTextBox2("Validating...");
 
         }
 
@@ -302,7 +301,7 @@ namespace HelloEEG
             Clipboard.SetText(password);
             // 복사 작업이 완료되면 메시지를 보여줌
             MessageBox.Show("연결 코드가 클립보드에 복사되었습니다.\n뇌파 측정 기기와의 연결을 위해 웹페이지에 코드를 입력해주세요!");
-            UpdateTextBox(">> Connection code copied to clipboard");
+            UpdateTextBox("Connection code copied to clipboard");
         }
 
         private void logBox_TextChanged(object sender, EventArgs e)
@@ -312,12 +311,12 @@ namespace HelloEEG
 
         public void UpdateTextBox(string text)
         {
-            logBox.Text += text + Environment.NewLine;
+            logBox.Text += ">> " + text + Environment.NewLine;
         }
 
         public static void UpdateTextBox2(string text)
         {
-            UpdateTextBox2(text);
+            //UpdateTextBox2(text);
         }
     }
 }

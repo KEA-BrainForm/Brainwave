@@ -28,7 +28,7 @@ namespace testprogram
         static Connector connector;
         static byte poorSig;
         [STAThread]
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             //랜덤 연결코드 생성
             Random random = new Random();
