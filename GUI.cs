@@ -154,7 +154,6 @@ namespace HelloEEG
                                     var response2 = await client.PostAsync(postUri, mergedContent);
                                     var result = await response2.Content.ReadAsStringAsync();
                                 }
-                                Thread.Sleep(2000);
                             }
 
 
