@@ -1,21 +1,15 @@
 using NeuroSky.ThinkGear;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Collections;
-using System.Web;
 
 namespace HelloEEG
 {
@@ -95,6 +89,8 @@ namespace HelloEEG
                                     // Chart를 Line Chart로 설정합니다.
                                     seriesA.ChartType = SeriesChartType.Line;
 
+
+                                    // 처음 측정을 시작하면 4개정도 0으로 받아지므로 앞부분 4개 삭제
                                     for (int i = 0; i < 4; i++)
                                     {
                                         if (attention.Count > 0)
@@ -132,10 +128,20 @@ namespace HelloEEG
                                     //System.Console.WriteLine("Goodbye.");
                                     connector.Close();
 
+                                    // 집중도, 안정도 평균 구하기
+                                    float sumAttention = 0;
+                                    float sumMeditation = 0;
+
+                                    foreach (int num in attention) { sumAttention += num; }
+                                    foreach (int num in meditation) { sumMeditation += num; }
+
+                                    float avgAttention = sumAttention / attention.Count;
+                                    float avgMeditation = sumMeditation / meditation.Count;
+
                                     // POST
                                     var postUri = new Uri("http://localhost:8080/api/imgInfo");
 
-                                    var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code };
+                                    var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code, avgAtt = obj1.avgAttention, avgMed = obj1.avgMeditation };
 
                                     var imageContent = new ByteArrayContent(File.ReadAllBytes("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png"));
                                     imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
