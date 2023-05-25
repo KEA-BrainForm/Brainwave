@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Collections;
+using System.Security.Authentication.ExtendedProtection;
 
 namespace HelloEEG
 {
@@ -17,6 +18,7 @@ namespace HelloEEG
     {
         static ArrayList attention = new ArrayList();
         static ArrayList meditation = new ArrayList();
+        static ArrayList blink = new ArrayList();
 
         static Connector connector;
         static byte poorSig;
@@ -38,6 +40,10 @@ namespace HelloEEG
             var getUri = "http://localhost:8080/api/userInfo/";
             getUri += password;
             UpdateTextBox("getUri: " + getUri);
+
+            int blinkArrayCount = 0; // blink array 슬라이딩윈도우 세기
+            int blinkThreshold = 50; // 몇 이상이면 눈을 깜빡였다고 판단할 것인가
+            int blinkCount = 0; // 슬라이딩윈도우 내에서 눈을 깜빡인 횟수가 몇번인지 (5번 중에 3번 이상이면 설문 종료하기)
 
             while (true)
             {
@@ -78,6 +84,24 @@ namespace HelloEEG
                                 response = await client.GetAsync(getUri);
                                 content = await response.Content.ReadAsStringAsync();
                                 obj1 = JsonConvert.DeserializeObject(content);
+
+                                if (blink.Count > 5)
+                                {
+                                    for (int i = blinkArrayCount; i >= blinkArrayCount-4; i--)
+                                    {
+                                        if ((int)blink[i] > blinkThreshold)
+                                        {
+                                            blinkCount++;
+                                        }
+                                    }
+                                    
+                                    if (blinkCount >= 3)
+                                    {
+                                        obj1.flag = false;
+                                    }
+                                }
+                                blinkArrayCount += 1;
+
                                 if (obj1.flag == false)
                                 {
                                     drawChart form1 = new drawChart();
@@ -93,16 +117,8 @@ namespace HelloEEG
                                     // 처음 측정을 시작하면 4개정도 0으로 받아지므로 앞부분 4개 삭제
                                     for (int i = 0; i < 4; i++)
                                     {
-                                        if (attention.Count > 0)
-                                        {
-                                            var val = attention[0];
-                                            attention.RemoveAt(0);
-                                        }
-                                        if (meditation.Count > 0)
-                                        {
-                                            var val = meditation[0];
-                                            meditation.RemoveAt(0);
-                                        }
+                                        if (attention.Count > 0) { attention.RemoveAt(0); }
+                                        if (meditation.Count > 0) { meditation.RemoveAt(0);}
                                     }
 
                                     foreach (object obj in attention)
@@ -282,6 +298,8 @@ namespace HelloEEG
                 if (tgParser.ParsedData[i].ContainsKey("BlinkStrength"))
                 {
                     //Console.WriteLine("Eyeblink " + tgParser.ParsedData[i]["BlinkStrength"]);
+
+                    blink.Add(tgParser.ParsedData[i]["BlinkStrength"]);
                 }
 
 
