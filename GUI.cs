@@ -110,7 +110,7 @@ namespace HelloEEG
                                     Series seriesM = new Series("Meditation");
 
 
-                                    // Chart를 Line Chart로 설정합니다.
+                                    // Chart를 Line Chart로 설정
                                     seriesA.ChartType = SeriesChartType.Line;
 
 
@@ -140,7 +140,7 @@ namespace HelloEEG
 
                                     form1.chart1.SaveImage("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png", ChartImageFormat.Png);
 
-                                    //gui.UpdateTextBox(">> Connection closed.");
+                                    UpdateTextBox(">> Connection closed. Bye.");
                                     //System.Console.WriteLine("Goodbye.");
                                     connector.Close();
 
@@ -185,7 +185,7 @@ namespace HelloEEG
                     }
                     catch
                     {
-                        UpdateTextBox("Retrying...");
+                        UpdateTextBox("Trying to connect...");
                         continue; 
                     }
                 }
@@ -197,8 +197,7 @@ namespace HelloEEG
         {
             Connector.DeviceEventArgs de = (Connector.DeviceEventArgs)e;
 
-            //Console.WriteLine("Device found on: " + de.Device.PortName);
-            UpdateTextBox2("Device found on: " + de.Device.PortName);
+            Console.WriteLine("Device found on: " + de.Device.PortName);
 
             de.Device.DataReceived += new EventHandler(OnDataReceived);
         }
@@ -210,8 +209,7 @@ namespace HelloEEG
 
         static void OnDeviceFail(object sender, EventArgs e)
         {
-            //Console.WriteLine("No devices found! :(");
-            UpdateTextBox2("No devices found! :(");
+            Console.WriteLine("No devices found! :(");
         }
 
 
@@ -220,9 +218,7 @@ namespace HelloEEG
 
         static void OnDeviceValidating(object sender, EventArgs e)
         {
-            //Console.WriteLine("Validating: ");
-            UpdateTextBox2("Validating...");
-
+            Console.WriteLine("Validating: ");
         }
 
 
@@ -264,7 +260,7 @@ namespace HelloEEG
 
                     if (tgParser.ParsedData[i]["PoorSignal"] > 50)
                     {
-                        UpdateTextBox2("Poor SIGNAL!");
+                        Console.WriteLine("Poor SIGNAL!");
                     }
 
                     poorSig = (byte)tgParser.ParsedData[i]["PoorSignal"];
@@ -273,8 +269,7 @@ namespace HelloEEG
 
                 if (tgParser.ParsedData[i].ContainsKey("Attention"))
                 {
-                    //Console.WriteLine("Att Value:" + tgParser.ParsedData[i]["Attention"]);
-                    UpdateTextBox2("Att Value:" + tgParser.ParsedData[i]["Attention"]);
+                    Console.WriteLine("Att Value:" + tgParser.ParsedData[i]["Attention"]);
 
                     attention.Add(tgParser.ParsedData[i]["Attention"]);
                 }
@@ -282,8 +277,7 @@ namespace HelloEEG
 
                 if (tgParser.ParsedData[i].ContainsKey("Meditation"))
                 {
-                    //Console.WriteLine("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
-                    UpdateTextBox2("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
+                    Console.WriteLine("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
 
                     meditation.Add(tgParser.ParsedData[i]["Meditation"]);
                 }
@@ -335,11 +329,6 @@ namespace HelloEEG
         public void UpdateTextBox(string text)
         {
             logBox.Text += ">> " + text + Environment.NewLine;
-        }
-
-        public static void UpdateTextBox2(string text)
-        {
-            //UpdateTextBox2(text);
         }
     }
 }
