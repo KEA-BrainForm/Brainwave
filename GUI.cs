@@ -81,10 +81,12 @@ namespace HelloEEG
                             connector.setBlinkDetectionEnabled(true);
                             while (true)
                             {
+                                // flag를 받아오기 위함: false->true면 설문 시작, true->false면 설문 종료
                                 response = await client.GetAsync(getUri);
                                 content = await response.Content.ReadAsStringAsync();
                                 obj1 = JsonConvert.DeserializeObject(content);
 
+                                // 5틱 내에 3번 이상 눈을 깜빡였으면 flag를 false로 변환 (= 설문 종료)
                                 if (blink.Count > 5)
                                 {
                                     for (int i = blinkArrayCount; i >= blinkArrayCount-4; i--)
@@ -97,7 +99,16 @@ namespace HelloEEG
                                     
                                     if (blinkCount >= 3)
                                     {
-                                        obj1.flag = false;
+                                        obj1.flag = false; // 설문 종료로 판단
+
+                                        // 설문을 종료했다고 Post로 알림
+                                        var blinkUri = new Uri("http://localhost:8080/api/blink");
+                                        var blinkData = new { flag = false };
+                                        var blinkJson = Newtonsoft.Json.JsonConvert.SerializeObject(blinkData);
+                                        var blinkJsontoString = new StringContent(blinkJson, Encoding.UTF8, "application/json");
+
+                                        var blinkResponse = await client.PostAsync(blinkUri, blinkJsontoString);
+                                        var result = await blinkResponse.Content.ReadAsStringAsync();
                                     }
                                 }
                                 blinkArrayCount += 1;
@@ -164,7 +175,7 @@ namespace HelloEEG
 
                                     var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(data);
                                     var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
-                                    //gui.UpdateTextBox(jsonData);
+
                                     Console.WriteLine(jsonData);
 
                                     var mergedContent = new MultipartFormDataContent();
@@ -177,11 +188,7 @@ namespace HelloEEG
                                     var result = await response2.Content.ReadAsStringAsync();
                                 }
                             }
-
-
                         }
-
-
                     }
                     catch
                     {
