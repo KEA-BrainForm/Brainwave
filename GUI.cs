@@ -17,7 +17,9 @@ namespace HelloEEG
     public partial class GUI : Form
     {
         static ArrayList attention = new ArrayList();
+        static double sumAttention = 0;
         static ArrayList meditation = new ArrayList();
+        static double sumMeditation = 0;
         static ArrayList blink = new ArrayList();
 
         static Connector connector;
@@ -45,15 +47,14 @@ namespace HelloEEG
             int blinkThreshold = 50; // 몇 이상이면 눈을 깜빡였다고 판단할 것인가
             int blinkCount = 0; // 슬라이딩윈도우 내에서 눈을 깜빡인 횟수가 몇번인지 (5번 중에 3번 이상이면 설문 종료하기)
 
-            while (true)
+            using (HttpClient client = new HttpClient())
             {
-                using (HttpClient client = new HttpClient())
+                while (true)
                 {
                     try
                     {
                         var response = await client.GetAsync(getUri);
                         await Task.Delay(3000);
-                        UpdateTextBox("Got uri response!");
                         var content = await response.Content.ReadAsStringAsync();
                         // Deserialize the JSON string into a dynamic object
                         dynamic obj1 = JsonConvert.DeserializeObject(content);
@@ -65,29 +66,28 @@ namespace HelloEEG
                         UpdateTextBox("Surveying: " + obj1.flag);
                         Console.WriteLine("Flag: " + obj1.flag);
 
-                        while (obj1.flag == true)
+                        if (obj1.flag == true)
                         {
                             connector = new Connector();
                             connector.DeviceConnected += new EventHandler(OnDeviceConnected);
                             connector.DeviceConnectFail += new EventHandler(OnDeviceFail);
                             connector.DeviceValidating += new EventHandler(OnDeviceValidating);
-
                             // Scan for devices across COM ports
                             // The COM port named will be the first COM port that is checked.
-                            connector.ConnectScan("COM6");
-
+                            connector.ConnectScan("COM3");
 
                             // Blink detection needs to be manually turned on
                             connector.setBlinkDetectionEnabled(true);
+
                             while (true)
                             {
-                                // flag를 받아오기 위함: false->true면 설문 시작, true->false면 설문 종료
+                                // flag를 받아오기 위함: false->true면 설문 시작이었고, true->false면 설문 종료하기 위함
                                 response = await client.GetAsync(getUri);
                                 content = await response.Content.ReadAsStringAsync();
                                 obj1 = JsonConvert.DeserializeObject(content);
 
                                 // 5틱 내에 3번 이상 눈을 깜빡였으면 flag를 false로 변환 (= 설문 종료)
-                                if (blink.Count > 5)
+                                /*if (blink.Count > 5)
                                 {
                                     for (int i = blinkArrayCount; i >= blinkArrayCount-4; i--)
                                     {
@@ -96,7 +96,7 @@ namespace HelloEEG
                                             blinkCount++;
                                         }
                                     }
-                                    
+
                                     if (blinkCount >= 3)
                                     {
                                         obj1.flag = false; // 설문 종료로 판단
@@ -111,10 +111,11 @@ namespace HelloEEG
                                         var result = await blinkResponse.Content.ReadAsStringAsync();
                                     }
                                 }
-                                blinkArrayCount += 1;
+                                blinkArrayCount += 1;*/
 
                                 if (obj1.flag == false)
                                 {
+
                                     drawChart form1 = new drawChart();
 
                                     Series seriesA = new Series("Attention");
@@ -123,59 +124,46 @@ namespace HelloEEG
 
                                     // Chart를 Line Chart로 설정
                                     seriesA.ChartType = SeriesChartType.Line;
+                                    seriesM.ChartType = SeriesChartType.Line; ;
 
 
                                     // 처음 측정을 시작하면 4개정도 0으로 받아지므로 앞부분 4개 삭제
                                     for (int i = 0; i < 4; i++)
                                     {
                                         if (attention.Count > 0) { attention.RemoveAt(0); }
-                                        if (meditation.Count > 0) { meditation.RemoveAt(0);}
+                                        if (meditation.Count > 0) { meditation.RemoveAt(0); }
                                     }
 
-                                    foreach (object obj in attention)
-                                    {
-                                        seriesA.Points.Add((double)obj);
-                                    }
+                                    foreach (object obj in attention) { seriesA.Points.Add((double)obj); }
+                                    foreach (object obj in meditation) { seriesM.Points.Add((double)obj); }
 
-                                    foreach (object obj in meditation)
-                                    {
-                                        seriesM.Points.Add((double)obj);
-                                    }
+                                    // 집중도, 안정도 평균 구하기
+                                    double avgAttention = sumAttention / attention.Count;
+                                    double avgMeditation = sumMeditation / meditation.Count;
+                                    System.Console.WriteLine(avgAttention);
 
                                     form1.chart1.Series.Add(seriesA);
                                     form1.chart1.Series.Add(seriesM);
+                                    string strPath = AppDomain.CurrentDomain.BaseDirectory;
+                                    DirectoryInfo di = new DirectoryInfo(strPath);
+                                    if (di.Exists == false) { di.Create(); }
+                                    System.Console.WriteLine(strPath);
+                                    form1.chart1.SaveImage(strPath + @"\chart.png", ChartImageFormat.Png);
 
-                                    // Chart를 Line Chart로 설정합니다.
-                                    seriesA.ChartType = SeriesChartType.Line;
-                                    seriesM.ChartType = SeriesChartType.Line;
-
-                                    form1.chart1.SaveImage("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png", ChartImageFormat.Png);
-
-                                    UpdateTextBox(">> Connection closed. Bye.");
-                                    //System.Console.WriteLine("Goodbye.");
+                                    UpdateTextBox("Connection closed. Bye.");
+                                    System.Console.WriteLine("Goodbye.");
                                     connector.Close();
-
-                                    // 집중도, 안정도 평균 구하기
-                                    float sumAttention = 0;
-                                    float sumMeditation = 0;
-
-                                    foreach (int num in attention) { sumAttention += num; }
-                                    foreach (int num in meditation) { sumMeditation += num; }
-
-                                    float avgAttention = sumAttention / attention.Count;
-                                    float avgMeditation = sumMeditation / meditation.Count;
 
                                     // POST
                                     var postUri = new Uri("http://localhost:8080/api/imgInfo");
 
-                                    var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code, avgAtt = obj1.avgAttention, avgMed = obj1.avgMeditation };
+                                    var data = new { memberId = obj1.memberId, surveyId = obj1.surveyId, code = obj1.code, avgAtt = avgAttention, avgMed = avgMeditation };
 
-                                    var imageContent = new ByteArrayContent(File.ReadAllBytes("C:\\Users\\USER\\Desktop\\NeuroSky MindWave Mobile_Example_HelloEEG\\chart.png"));
+                                    var imageContent = new ByteArrayContent(File.ReadAllBytes(strPath + @"\chart.png"));
                                     imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
 
                                     var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(data);
                                     var jsonContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
-
                                     Console.WriteLine(jsonData);
 
                                     var mergedContent = new MultipartFormDataContent();
@@ -186,16 +174,23 @@ namespace HelloEEG
                                     //Console.WriteLine(mergedContent.Headers);
                                     var response2 = await client.PostAsync(postUri, mergedContent);
                                     var result = await response2.Content.ReadAsStringAsync();
+
+                                    await Task.Delay(99999999);
+                                    //Environment.Exit(0);
                                 }
                             }
+
                         }
                     }
                     catch
                     {
                         UpdateTextBox("Trying to connect...");
-                        continue; 
+                        continue;
                     }
                 }
+
+
+
             }
         }
 
@@ -279,6 +274,7 @@ namespace HelloEEG
                     Console.WriteLine("Att Value:" + tgParser.ParsedData[i]["Attention"]);
 
                     attention.Add(tgParser.ParsedData[i]["Attention"]);
+                    sumAttention += tgParser.ParsedData[i]["Attention"];
                 }
 
 
@@ -287,6 +283,7 @@ namespace HelloEEG
                     Console.WriteLine("Med Value:" + tgParser.ParsedData[i]["Meditation"]);
 
                     meditation.Add(tgParser.ParsedData[i]["Meditation"]);
+                    sumMeditation += tgParser.ParsedData[i]["Meditation"];
                 }
 
 
@@ -298,7 +295,7 @@ namespace HelloEEG
 
                 if (tgParser.ParsedData[i].ContainsKey("BlinkStrength"))
                 {
-                    //Console.WriteLine("Eyeblink " + tgParser.ParsedData[i]["BlinkStrength"]);
+                    Console.WriteLine("Eyeblink " + tgParser.ParsedData[i]["BlinkStrength"]);
 
                     blink.Add(tgParser.ParsedData[i]["BlinkStrength"]);
                 }
