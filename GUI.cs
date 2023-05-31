@@ -11,6 +11,8 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Collections;
 using System.Security.Authentication.ExtendedProtection;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace HelloEEG
 {
@@ -21,6 +23,9 @@ namespace HelloEEG
         static ArrayList meditation = new ArrayList();
         static double sumMeditation = 0;
         static ArrayList blink = new ArrayList();
+
+        static ArrayList blinkTimes = new ArrayList(); // blink 값이 추가된 시간을 저장하는 리스트
+        static bool isBlinkTrue = false; // blink 값이 2초 내에 3번 이상 추가되었는지를 나타내는 변수
 
         static Connector connector;
         static byte poorSig;
@@ -35,17 +40,13 @@ namespace HelloEEG
         }
 
 
-        public async Task Brain()
+        public async Task<dynamic> Brain()
         {
             UpdateTextBox("Connecting code: " + password);
             //get uri 생성
             var getUri = "http://localhost:8080/api/userInfo/";
             getUri += password;
             UpdateTextBox("getUri: " + getUri);
-
-            int blinkArrayCount = 0; // blink array 슬라이딩윈도우 세기
-            int blinkThreshold = 50; // 몇 이상이면 눈을 깜빡였다고 판단할 것인가
-            int blinkCount = 0; // 슬라이딩윈도우 내에서 눈을 깜빡인 횟수가 몇번인지 (5번 중에 3번 이상이면 설문 종료하기)
 
             using (HttpClient client = new HttpClient())
             {
@@ -58,8 +59,6 @@ namespace HelloEEG
                         var content = await response.Content.ReadAsStringAsync();
                         // Deserialize the JSON string into a dynamic object
                         dynamic obj1 = JsonConvert.DeserializeObject(content);
-
-                        if (obj1 == null) UpdateTextBox("Failed to get content. Please input the connection code.");
 
                         Console.WriteLine(obj1);
                         // Access the individual properties of the object and print them
@@ -74,7 +73,7 @@ namespace HelloEEG
                             connector.DeviceValidating += new EventHandler(OnDeviceValidating);
                             // Scan for devices across COM ports
                             // The COM port named will be the first COM port that is checked.
-                            connector.ConnectScan("COM3");
+                            connector.ConnectScan("COM4");
 
                             // Blink detection needs to be manually turned on
                             connector.setBlinkDetectionEnabled(true);
@@ -86,32 +85,11 @@ namespace HelloEEG
                                 content = await response.Content.ReadAsStringAsync();
                                 obj1 = JsonConvert.DeserializeObject(content);
 
-                                // 5틱 내에 3번 이상 눈을 깜빡였으면 flag를 false로 변환 (= 설문 종료)
-                                /*if (blink.Count > 5)
+                                if (isBlinkTrue)
                                 {
-                                    for (int i = blinkArrayCount; i >= blinkArrayCount-4; i--)
-                                    {
-                                        if ((int)blink[i] > blinkThreshold)
-                                        {
-                                            blinkCount++;
-                                        }
-                                    }
-
-                                    if (blinkCount >= 3)
-                                    {
-                                        obj1.flag = false; // 설문 종료로 판단
-
-                                        // 설문을 종료했다고 Post로 알림
-                                        var blinkUri = new Uri("http://localhost:8080/api/blink");
-                                        var blinkData = new { flag = false };
-                                        var blinkJson = Newtonsoft.Json.JsonConvert.SerializeObject(blinkData);
-                                        var blinkJsontoString = new StringContent(blinkJson, Encoding.UTF8, "application/json");
-
-                                        var blinkResponse = await client.PostAsync(blinkUri, blinkJsontoString);
-                                        var result = await blinkResponse.Content.ReadAsStringAsync();
-                                    }
+                                    obj1.flag = false;
+                                    UpdateTextBox("2초 내에 3회 이상 눈을 깜빡여서 설문이 종료되었습니다.");
                                 }
-                                blinkArrayCount += 1;*/
 
                                 if (obj1.flag == false)
                                 {
@@ -237,7 +215,7 @@ namespace HelloEEG
             TGParser tgParser = new TGParser();
 
             tgParser.Read(de.DataRowArray);
-
+            
             /* Loops through the newly parsed data of the connected headset*/
             // The comments below indicate and can be used to print out the different data outputs. 
 
@@ -290,7 +268,6 @@ namespace HelloEEG
                 if (tgParser.ParsedData[i].ContainsKey("EegPowerDelta"))
                 {
                     //Console.WriteLine("Delta: " + tgParser.ParsedData[i]["EegPowerDelta"]);
-
                 }
 
                 if (tgParser.ParsedData[i].ContainsKey("BlinkStrength"))
@@ -298,6 +275,21 @@ namespace HelloEEG
                     Console.WriteLine("Eyeblink " + tgParser.ParsedData[i]["BlinkStrength"]);
 
                     blink.Add(tgParser.ParsedData[i]["BlinkStrength"]);
+
+                    // 현재 시간을 blinkTimes 리스트에 추가
+                    blinkTimes.Add(DateTime.Now);
+
+                    // 2초 이내에 3번 이상 blink 값이 추가되었는지 확인
+                    if (blinkTimes.Count >= 3)
+                    {
+                        TimeSpan diff = (DateTime)blinkTimes[blinkTimes.Count - 1] - (DateTime)blinkTimes[blinkTimes.Count - 3];
+                        if (diff.TotalSeconds <= 2)
+                        {
+                            // 2초 이내에 3번 이상 blink 값이 추가되었음
+                            System.Console.WriteLine("2초 내에 3회 이상 눈을 깜빡여서 설문이 종료되었습니다.");
+                            isBlinkTrue = true;
+                        }
+                    }
                 }
 
 
